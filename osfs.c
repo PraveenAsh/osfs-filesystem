@@ -18,22 +18,22 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h>
-#include <sys/stat>
+#include <sys/stat.h>
 #include <string.h>
 
 static void *osfs_init(struct fuse_conn_info *connect, struct fuse_config *config){
 	(void) connect;
 	config->use_ino = 1;
-	config->
+	config->entry_timeout = 0;
 	config->attr_timeout = 0;
 	config->negative_timeout = 0;
 	return NULL;
 }
 
-static int osfs_getattribute(const char *path, struct stat *stringbuf, struct fuse_file_info file){
+static int osfs_getattribute(const char *path, struct stat  *buf, struct fuse_file_info file){
 	(void) file;
 	int res;
-	res = lstat(path, stbuf);
+	res = lstat(path, buf);
 	if(res == -1){
 		return -errno;
 	}
@@ -105,7 +105,7 @@ static int osfs_unlink(){
 }
 
 static struct fuse_operations osfs = {
-	.init 			=	osfs_init,
+	//.init 			=	osfs_init,
 	.getattr 		=	osfs_getattribute,
 	.access 		=	osfs_access,
 	.readlink 		=	osfs_readlink,
