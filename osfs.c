@@ -63,8 +63,12 @@ static int osfs_readlink(const char *path, char *buf, size_t size){
 // TODO : complete these stub functions
 // TODO : Please add approp print statements to viwe in debug mode.
 // EX : fprintf(strr,"print something");
-static int osfs_mkdir(){
+//parameter needed is path of the directory and file mode ie READ and WRITE
+static int osfs_mkdir(const char *path, mode_t mode){
 	//TODO : Function implementation here
+	int res;
+	res = mkdir(path, mode);
+	if(res == -1)	return -errno;
 	return 0;
 }
 static int osfs_open(){
