@@ -6,8 +6,8 @@
 */
 
 #define FUSE_USE_VERSION 31
-#ifdef CONFIG_H
-#include<config.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
 #endif
 #ifdef linux
 #define SOURCE_DEF 700
@@ -20,29 +20,40 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <string.h>
-
-static void *osfs_init(struct fuse_conn_info *connect, struct fuse_config *config){
-	(void) connect;
-	config->use_ino = 1;
-	config->entry_timeout = 0;
-	config->attr_timeout = 0;
-	config->negative_timeout = 0;
-	return NULL;
-}
+#ifdef HAVE_SETXATTR
+#include <sys/xattr.h>
+#endif
 
 static int osfs_getattribute(const char *path, struct stat  *buf, struct fuse_file_info file){
+	fprintf(stderr,"\nIn init");
 	(void) file;
 	int res;
+	buf->st_uid = getuid();
+	buf->st_gid = getgid();
+	buf->st_atime = time(NULL);
+	buf->st_mtime = time(NULL);
 	res = lstat(path, buf);
+	if(strcmp(path,"/") == 0){
+		buf->st_mode = S_IFREG | 0644;
+		buf->st_nlink = 2;
+	}
+	else{
+		buf->st_mode =S_IFREG | 0644;
+		buf->st_nlink = 1;
+		buf->st_size = 1024;
+	}
 	if(res == -1){
 		return -errno;
 	}
+	
 	return 0;
 }
 
-static int osfs_access(const char *path, char *buf, size_t size){
+static int osfs_access(const char *path, int mask){
+	fprintf(stderr,"\nIn permission");
 	int res;
-	res = readlink(path, buf, size-1);
+	res = access(path,6);
+	fprintf(stderr,"\nPermission mode : %d",mask);
 	if(res == -1){
 		return -errno;
 	}
@@ -65,6 +76,7 @@ static int osfs_readlink(const char *path, char *buf, size_t size){
 // EX : fprintf(strr,"print something");
 //parameter needed is path of the directory and file mode ie READ and WRITE
 static int osfs_mkdir(const char *path, mode_t mode){
+	fprintf(stderr,"\n 1 Directory successfully made.");
 	//TODO : Function implementation here
 	int res;
 	res = mkdir(path, mode);
@@ -105,7 +117,6 @@ static int osfs_unlink(){
 }
 
 static struct fuse_operations osfs = {
-	//.init 			=	osfs_init,
 	.getattr 		=	osfs_getattribute,
 	.access 		=	osfs_access,
 	.readlink 		=	osfs_readlink,
@@ -122,4 +133,5 @@ static struct fuse_operations osfs = {
 
 int main(int argc, char *argv[]){
 	return fuse_main(argc, argv, &osfs, NULL);
+	printf("\n");
 }
